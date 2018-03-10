@@ -1,4 +1,8 @@
-*.*
-!/180109_JumpCpp/*.cpp
-!/180109_JumpCpp/*.h
-!/180109_JumpCpp/*.jpg
+*.sln
+/.vs/
+/x64/
+/v1.0_cpp/*
+/v1.0_cpp/*.*
+!/v1.0_cpp/*.cpp
+!/v1.0_cpp/*.h
+!/v1.0_cpp/*.jpg
