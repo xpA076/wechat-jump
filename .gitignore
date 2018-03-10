@@ -1,2 +1,4 @@
-/180109_JumpCpp/*
-*.txt
+*.*
+!/180109_JumpCpp/*.cpp
+!/180109_JumpCpp/*.h
+!/180109_JumpCpp/*.jpg
