@@ -42,15 +42,19 @@
 #include"JumpVision.h"
 
 int main() {
+	double jump_ratio = 1.390;
+	double input;
+	std::cout << "input ratio_factor (or press enter using default:1.390):" << std::endl;
+	std::cin>>std::noskipws >> input;
+	if (input > 0) {
+		jump_ratio = input;
+	}
 	std::cout << "starting" << std::endl;
-
-
 	for (int i = 0; i < 500; ++i) {
-		if (!Process()) {
+		if (!Process(jump_ratio)) {
 			break;
 		}
 	}
-
 	std::cout << "end game" << std::endl;
 	system("pause");
 	return 0;

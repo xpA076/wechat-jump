@@ -6,3 +6,7 @@
 !/v1.0_cpp/*.cpp
 !/v1.0_cpp/*.h
 !/v1.0_cpp/*.jpg
+/v2.0_python/*
+/v2.0_python/*.*
+!/v2.0_python/*.py
+/v2.0_python/tst*.py

@@ -354,9 +354,8 @@ void MatchAim(cv::Mat& SrcImg, int& x, int& y,int xBeg,int yBeg) {
 
 
 // read image - calculate distance - press simulation
-bool Process() {
+bool Process(double jump_ratio) {
 	std::cout << "process" << std::endl;
-	const double jump_ratio=1.452;
 
 	Capture();	
 	
