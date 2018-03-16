@@ -44,7 +44,7 @@
 int main() {
 	double jump_ratio = 1.390;
 	double input;
-	std::cout << "input ratio_factor (or press enter using default:1.390):" << std::endl;
+	std::cout << "input ratio (or press enter using default:1.390):" << std::endl;
 	std::cin>>std::noskipws >> input;
 	if (input > 0) {
 		jump_ratio = input;
