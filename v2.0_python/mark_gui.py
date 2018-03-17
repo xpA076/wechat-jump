@@ -1,3 +1,7 @@
+################################################
+###### just a demo , not used in pratical ######
+################################################
+
 from process_img import getroi, getlines
 
 from PyQt5 import QtWidgets, QtGui, QtCore
