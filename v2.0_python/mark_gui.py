@@ -1,11 +1,34 @@
-################################################
-###### just a demo , not used in pratical ######
-################################################
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+用于标记样本的GUI：
+页面主体imglabel对象实现：
+	F1 刷新显示图片 # TODO
+	鼠标滚轮对应鼠标所在区域缩放
+		鼠标滚轮对应已选中线条移动 TODO
+	鼠标拖动对应图像移动（放大 ratio > 1 情况下）
+		鼠标拖动对应已选中线条移动 TODO
+	键盘1/2分别对应标注水平/竖直边框（再按取消标注功能）TODO
+	鼠标单击/拖动对应选中边界线条显示/移动 （TODO 待绑定对应鼠标事件）	
+	键盘 ↑↓←→ 对应选中线条单像素移动 TODO
+	前一标过的线可按esc撤销 TODO
+	
+TODO: (undefined)
+	图片导入逻辑
+	生成 label_data 导出逻辑
+	
+键盘、滚轮事件写在主窗体下；鼠标按键事件写在MyImgLabel中
+# TODO 信号槽事件功能待取消 
+2018.3.18 22:54
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+
 
 from process_img import getroi, getlines
+from mywidgets import MyImgLabel
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtGui import QFont
+
+import numpy as np
 
 import cv2
 import sys
@@ -15,49 +38,8 @@ ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("myappid")
 
 path = r'E:\My_temp\Jump\data1\0.png'
 
-srcimg = cv2.imread(path)
-bx, by = getroi(srcimg)
-
-roiimg = srcimg[by:(by + 600), bx:(bx + 600)].copy()
-
-
-# cv2.imshow('a', roiimg)
-
-# cv2.waitKey(0)
-
-class MyImgLabel(QtWidgets.QLabel):
-	mouse_move_signal = QtCore.pyqtSignal()
-
-	def __init__(self, mainwindow):
-		super().__init__(mainwindow)
-		self.mw = mainwindow
-		self.setMouseTracking(True)
-
-	def mouseMoveEvent(self, e: QtGui.QMouseEvent):
-		self.mw.mousex = e.x() + 100
-		self.mw.mousey = e.y() + 100
-		self.mouse_move_signal.emit()
-
-
-# self.update()
-
-
-"""
-	def paintEvent(self, a0: QtGui.QPaintEvent):
-		paint=QtGui.QPainter()
-		paint.begin(self)
-		pen=QtGui.QPen(QtCore.Qt.black,1,QtCore.Qt.SolidLine)
-		paint.drawLine(20,20,self.mousex,self.mousey)
-		paint.end()
-"""
-
 
 class MainWindow(QtWidgets.QMainWindow):
-	red = QtGui.QColor(255, 0, 0)
-	mousex = 0
-	mousey = 0
-	lines = []
-	boundingbox_visible = False
 
 	def __init__(self):
 		super().__init__()
@@ -66,74 +48,71 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.setWindowTitle('Labeling jump img_data')
 		self.setWindowIcon(QtGui.QIcon('format.ico'))
 		self.statusBar().showMessage('StandBy...')
-
 		self.setMouseTracking(True)
+
+		# 相关变量初始化
+
+		self.vtc_slc = False
+		self.hrz_slc = False
 
 		self.imglabel = MyImgLabel(self)
 		self.imglabel.mouse_move_signal.connect(self.testfunc)
 		self.imglabel.setGeometry(100, 100, 600, 600)
 
-		bx, by = getroi(srcimg)
-		self.roiimg = srcimg[by:(by + 600), bx:(bx + 600)].copy()
-		self.imglabel.setPixmap(QtGui.QPixmap.fromImage(
-			QtGui.QImage(self.roiimg, self.roiimg.shape[1], self.roiimg.shape[0],
-						 QtGui.QImage.Format_RGB888)))
-
-		self.lineu = QtWidgets.QWidget(self)
-		self.lines.append(self.lineu)
-		self.lined = QtWidgets.QWidget(self)
-		self.lines.append(self.lined)
-		self.linel = QtWidgets.QWidget(self)
-		self.lines.append(self.linel)
-		self.liner = QtWidgets.QWidget(self)
-		self.lines.append(self.liner)
-		for line in self.lines:
-			line.setStyleSheet('QWidget{background-color:%s}' % self.red.name())
-			line.setVisible(self.boundingbox_visible)
-
+	# self.imglabel 鼠标移动信号触发槽
 	def testfunc(self):
-		self.update_boundingbox('vis', self.mousex - 100, self.mousex + 100,
-								self.mousey - 50, self.mousey + 50)
-
-	def update_boundingbox(self, cmd, x1=0, x2=0, y1=0, y2=0):
-		if cmd == 'clr':
-			if not self.boundingbox_visible:
-				return
-			self.boundingbox_visible = False
-			for line in self.lines:
-				line.setVisible(self.boundingbox_visible)
-			return
-		if not self.boundingbox_visible:
-			self.boundingbox_visible = True
-			for line in self.lines:
-				line.setVisible(self.boundingbox_visible)
-		self.lineu.setGeometry(x1, y1, x2 - x1, 1)
-		self.lined.setGeometry(x1, y2, x2 - x1, 1)
-		self.linel.setGeometry(x1, y1, 1, y2 - y1)
-		self.liner.setGeometry(x2, y1, 1, y2 - y1)
+		pass
 
 	def mousePressEvent(self, e: QtGui.QMouseEvent):
 		pass
 
 	def mouseMoveEvent(self, e: QtGui.QMouseEvent):
-		self.mousex = e.x()
-		self.mousey = e.y()
-		self.statusBar().showMessage(
-			'moving: ' + str(e.x()) + ' , ' + str(e.y()))
-		self.update_boundingbox('clr')
+		pass
+
+	def wheelEvent(self, event: QtGui.QWheelEvent):
+		imgrect = self.imglabel.geometry()
+		delta = event.angleDelta().y()
+		# x,y 为映射不变点坐标
+		if event.x() > imgrect.x() and event.x() < (imgrect.x() + imgrect.width()) and \
+				event.y() > imgrect.y() and event.y() < (imgrect.y() + imgrect.height()):
+			x = int(event.x() - imgrect.x())
+			y = int(event.y() - imgrect.y())
+		else:
+			x = imgrect.width() // 2
+			y = imgrect.height() // 2
+		# 根据 delta 来判断滚轮方向
+		if delta > 0:
+			self.imglabel.resizeImg(x, y, 0.5, x, y)
+		if delta < 0:
+			self.imglabel.resizeImg(x, y, -0.5, x, y)
 
 
-"""
-	def paintEvent(self, a0: QtGui.QPaintEvent):
-		paint = QtGui.QPainter()
-		paint.begin(self)
-		pen = QtGui.QPen(QtCore.Qt.red,1)
-		paint.drawLine(20, 20, self.lbl.mousex, self.lbl.mousey)
-		self.lbl.setPixmap(QtGui.QPixmap.fromImage(
-			QtGui.QImage(roiimg, roiimg.shape[1], roiimg.shape[0],
-						 QtGui.QImage.Format_RGB888)))
-		paint.end()
-		"""
+	def keyPressEvent(self, event: QtGui.QKeyEvent):
+		if event.key() == QtCore.Qt.Key_F1:
+			srcimg = cv2.imread(path)
+			bx, by = getroi(srcimg)
+			roiimg = srcimg[by:(by + 600), bx:(bx + 600)].copy()
+			roiimg = cv2.cvtColor(roiimg, cv2.COLOR_BGR2RGB)
+			self.imglabel.setImage(roiimg)
+
+		if event.key() == QtCore.Qt.Key_1:
+			if self.hrz_slc:
+				self.hrz_slc = False
+				self.statusBar().showMessage('Standby...')
+			else:
+				self.hrz_slc = True
+				self.vtc_slc = False
+				self.statusBar().showMessage('choose horizontal line')
+
+		if event.key() == QtCore.Qt.Key_2:
+			if self.vtc_slc:
+				self.vtc_slc = False
+				self.statusBar().showMessage('Standby...')
+			else:
+				self.vtc_slc = True
+				self.hrz_slc = False
+				self.statusBar().showMessage('choose vertical line')
+
 
 if __name__ == '__main__':
 	app = QtWidgets.QApplication(sys.argv)
