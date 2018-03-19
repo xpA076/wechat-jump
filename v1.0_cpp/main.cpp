@@ -36,9 +36,7 @@
 // debug in win10-VS2017 & MI6(MIUI)
 
 
-#include<opencv2/opencv.hpp>
 #include<iostream>
-#include<windows.h>
 #include"JumpVision.h"
 
 int main() {

@@ -5,6 +5,7 @@
 
 #include<opencv2/opencv.hpp>
 #include<vector>
+#include<windows.h>
 
 // capture screenshot of android device & pull to PC
 void Capture(std::string name="1") {
