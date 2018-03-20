@@ -8,10 +8,7 @@ color2 = QtGui.QColor(0, 0, 255)  # 当前选择line颜色
 
 
 class MyImgLabel(QtWidgets.QLabel):
-    mouse_move_signal = QtCore.pyqtSignal()
-    mouse_press_signal = QtCore.pyqtSignal()
-    mouse_release_signal = QtCore.pyqtSignal()
-
+    # 其实加一个 refresh() 方法逻辑会清晰许多
 
     def __init__(self, mainwindow, roiimg=None):
         super().__init__(mainwindow)
@@ -42,6 +39,9 @@ class MyImgLabel(QtWidgets.QLabel):
         self.setPixmap(QtGui.QPixmap.fromImage(
             QtGui.QImage(roiimg.data, self.geometry().width(), self.geometry().height(),
                 QtGui.QImage.Format_RGB888)))
+        self.data=[-1,-1,-1,-1]
+        self.curidx=-1
+        self.updateLines()
 
 
     # 鼠标事件对应两部分功能：选择line / 移动img
@@ -61,7 +61,7 @@ class MyImgLabel(QtWidgets.QLabel):
         if not self.ismld:
             return
         if self.mw.hrz_slc or self.mw.vtc_slc:
-            dst = 0 # useless line
+            dst = 0  # useless line
             if self.mw.hrz_slc:
                 if e.y() < 0:
                     dst = self.pos2data(y=0)
@@ -97,6 +97,7 @@ class MyImgLabel(QtWidgets.QLabel):
             self.setPixmap(QtGui.QPixmap.fromImage(
                 QtGui.QImage(self.roiimg.data, self.roiimg.shape[1],
                     self.roiimg.shape[0], QtGui.QImage.Format_RGB888)))
+            self.updateLines()
             return
         imgrect = self.geometry()
         anchor_x = self.img_info['x']
@@ -127,11 +128,11 @@ class MyImgLabel(QtWidgets.QLabel):
         self.setPixmap(QtGui.QPixmap.fromImage(
             QtGui.QImage(curimg.data, curimg.shape[1], curimg.shape[0],
                 QtGui.QImage.Format_RGB888)))
-        self.updateLines()
         # 更新信息
         self.img_info['x'] = anchor_x
         self.img_info['y'] = anchor_y
         self.img_info['ratio'] = ratio1
+        self.updateLines()
 
 
     # 移动图像：(x0,y0) → (x1,y1)
@@ -162,73 +163,93 @@ class MyImgLabel(QtWidgets.QLabel):
         self.updateLines()
         self.img_info['x'] = -imgx
         self.img_info['y'] = -imgy
+        self.updateLines()
 
 
     # 对 bounding box 边线的操作（add/move/delete 所有关于坐标的参数均在 self.data 坐标系下表示）
     def addLine(self, x=-1, y=-1):
-        if x >= 0:
+        if y >= 0:
             if self.data[0] == -1:
-                self.data[0] = x
+                self.data[0] = y
                 self.curidx = 0
             elif self.data[1] >= 0:
                 self.mw.statusBar().showMessage(
                     'cannot add more vertical line')
                 self.curidx = -1
-            elif self.data[0] == x:
+            elif self.data[0] == y:
                 self.mw.statusBar().showMessage(
                     'current line is coincident with previous line')
                 self.curidx = -1
-            elif self.data[0] > x >= 0:
+            elif self.data[0] > y >= 0:
                 self.data[1] = self.data[0]
-                self.data[0] = x
+                self.data[0] = y
+                a = self.lines[0]
+                self.lines[0] = self.lines[1]
+                self.lines[1] = a
                 self.curidx = 0
             else:
-                self.data[1] = x
+                self.data[1] = y
                 self.curidx = 1
-        if y >= 0:
+        if x >= 0:
             if self.data[2] == -1:
-                self.data[2] = y
+                self.data[2] = x
                 self.curidx = 2
             elif self.data[3] >= 0:
                 self.mw.statusBar().showMessage(
                     'cannot add more horizontal line')
                 self.curidx = -1
-            elif self.data[2] == y:
+            elif self.data[2] == x:
                 self.mw.statusBar().showMessage(
                     'current line is coincident with previous line')
                 self.curidx = -1
-            elif self.data[2] > y >= 0:
+            elif self.data[2] > x >= 0:
                 self.data[3] = self.data[2]
-                self.data[2] = y
+                self.data[2] = x
+                a = self.lines[2]
+                self.lines[2] = self.lines[3]
+                self.lines[3] = a
                 self.curidx = 2
             else:
-                self.data[3] = y
+                self.data[3] = x
                 self.curidx = 3
         self.updateLines()
 
 
     def moveLine(self, idx, dst):  # dst: short of destination
         if idx >= 0 and self.lines[idx].isVisible():
-            self.lines[idx] = dst
+            if dst < 0:
+                self.data[idx] = 0
+            elif dst >= 600:
+                self.data[idx] = 599
+            else:
+                self.data[idx] = dst
             self.updateLines()
 
 
     def deleteLine(self, idx=-1):
         if idx >= 0:
-            self.data[idx] = -1
+            if idx == 0 and self.data[1] >= 0:
+                self.data[0] = self.data[1]
+                self.data[1] = -1
+            elif idx == 2 and self.data[3] >= 0:
+                self.data[2] = self.data[3]
+                self.data[3] = -1
+            else:
+                self.data[idx] = -1
+            self.curidx = -1
             self.updateLines()
 
 
-    # 用 self.data 的信息更新显示 lines
+    # 用 self.data 的信息更新显示 lines（其实图像显示逻辑也可以放到这里面来）
     def updateLines(self):
         for i in range(4):
             if self.data[i] >= 0:
                 self.lines[i].setVisible(True)
                 if i <= 1:
-                    self.lines[i].setGeometry(0, self.data2pos(self.data[i]),
+                    self.lines[i].setGeometry(0, self.data2pos(y=self.data[i]),
                         self.geometry().width(), 1)
                 else:
-                    self.lines[i].setGeometry(self.data2pos(self.data[i]), 0,
+                    self.lines[i].setGeometry(self.data2pos(x=self.data[i]), 0,
                         1, self.geometry().height())
                 if i == self.curidx:
                     self.lines[i].setStyleSheet(
@@ -253,3 +274,8 @@ class MyImgLabel(QtWidgets.QLabel):
             return int(x * self.img_info['ratio'] + self.img_info['x'])
         if y >= 0:
             return int(y * self.img_info['ratio'] + self.img_info['y'])
+
+
+    def setcuridx(self, idx):
+        self.curidx = idx
+        self.updateLines()
