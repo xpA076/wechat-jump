@@ -1,6 +1,5 @@
-from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5 import QtWidgets, QtGui
 
-import numpy as np
 import cv2
 
 color1 = QtGui.QColor(255, 0, 0)  # 已固定line颜色
@@ -8,6 +7,7 @@ color2 = QtGui.QColor(0, 0, 255)  # 当前选择line颜色
 
 
 class MyImgLabel(QtWidgets.QLabel):
+
     # 其实加一个 refresh() 方法逻辑会清晰许多
 
     def __init__(self, mainwindow, roiimg=None):
@@ -32,6 +32,7 @@ class MyImgLabel(QtWidgets.QLabel):
         self.curidx = -1  # current selection of line's index
         self.mousex = 0
         self.mousey = 0
+        self.msg = None
 
 
     def setImage(self, roiimg):
@@ -39,8 +40,8 @@ class MyImgLabel(QtWidgets.QLabel):
         self.setPixmap(QtGui.QPixmap.fromImage(
             QtGui.QImage(roiimg.data, self.geometry().width(), self.geometry().height(),
                 QtGui.QImage.Format_RGB888)))
-        self.data=[-1,-1,-1,-1]
-        self.curidx=-1
+        self.data = [-1, -1, -1, -1]
+        self.curidx = -1
         self.updateLines()
 
 
@@ -85,9 +86,11 @@ class MyImgLabel(QtWidgets.QLabel):
 
     def mouseReleaseEvent(self, e: QtGui.QMouseEvent):
         self.ismld = False
+        self.mw.clearfunc(self.msg)
+        self.msg = None
 
 
-    # 图像映射：ratio0 →(d_ratio)→ ratio1，(x0,y0) → (x1,y1)
+    # 图像映射：ratio0 →(+ d_ratio)→ ratio1，(x0,y0) → (x1,y1)
     def resizeImg(self, x0, y0, d_ratio, x1, y1):
         ratio1 = self.img_info['ratio'] + d_ratio
         if ratio1 < 1.1:
@@ -173,12 +176,10 @@ class MyImgLabel(QtWidgets.QLabel):
                 self.data[0] = y
                 self.curidx = 0
             elif self.data[1] >= 0:
-                self.mw.statusBar().showMessage(
-                    'cannot add more vertical line')
+                self.msg = 'cannot add more vertical line'
                 self.curidx = -1
             elif self.data[0] == y:
-                self.mw.statusBar().showMessage(
-                    'current line is coincident with previous line')
+                self.msg = 'current line is coincident with previous line'
                 self.curidx = -1
             elif self.data[0] > y >= 0:
                 self.data[1] = self.data[0]
@@ -195,12 +196,10 @@ class MyImgLabel(QtWidgets.QLabel):
                 self.data[2] = x
                 self.curidx = 2
             elif self.data[3] >= 0:
-                self.mw.statusBar().showMessage(
-                    'cannot add more horizontal line')
+                self.msg = 'cannot add more horizontal line'
                 self.curidx = -1
             elif self.data[2] == x:
-                self.mw.statusBar().showMessage(
-                    'current line is coincident with previous line')
+                self.msg = 'current line is coincident with previous line'
                 self.curidx = -1
             elif self.data[2] > x >= 0:
                 self.data[3] = self.data[2]
@@ -219,8 +218,10 @@ class MyImgLabel(QtWidgets.QLabel):
         if idx >= 0 and self.lines[idx].isVisible():
             if dst < 0:
                 self.data[idx] = 0
-            elif dst >= 600:
-                self.data[idx] = 599
+            elif 0 <= idx <= 1 and dst >= self.geometry().height():
+                self.data[idx] = self.geometry().height() - 1
+            elif 2 <= idx <= 3 and dst >= self.geometry().width():
+                self.data[idx] = self.geometry().width() - 1
             else:
                 self.data[idx] = dst
             self.updateLines()
