@@ -10,5 +10,6 @@ __*
 /v2.0_python/*
 /v2.0_python/*.*
 !*.ico
+!unit.jpg
 !/v2.0_python/*.py
 /v2.0_python/tst*.py
