@@ -4,13 +4,12 @@ from process_img import getroi
 
 import os
 import cv2
-import re
 
 
-frompath = 'E:\\My_temp\\Jump\\jump_capture01\\'
+frompath = 'E:\\My_temp\\Jump\\jump_capture02\\'
 fromidx = 0
 aimpath = 'E:\\Projects\\Coding\\wechat-jump\\v2.0_python\\__data\\01\\'
-aimidx = 0
+aimidx = 85
 aimsize = 100
 
 global rdat

@@ -31,8 +31,8 @@ import struct
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("myappid")
 
 # for initializing
-mainpath = 'E:\\My_temp\\Jump\\jump_capture02\\'
-startidx = 72
+mainpath = 'E:\\My_temp\\Jump\\jump_capture03\\'
+startidx = 0
 
 
 class MainWindow(QtWidgets.QMainWindow):
