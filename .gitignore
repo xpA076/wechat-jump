@@ -13,3 +13,4 @@ __*
 !unit.jpg
 !/v2.0_python/*.py
 /v2.0_python/tst*.py
+/v2.0_python/test*.py

@@ -31,7 +31,7 @@ import struct
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("myappid")
 
 # for initializing
-mainpath = 'E:\\My_temp\\Jump\\jump_capture03\\'
+mainpath = 'E:\\My_temp\\Jump\\jump_capture06\\'
 startidx = 0
 
 

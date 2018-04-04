@@ -6,10 +6,10 @@ import os
 import cv2
 
 
-frompath = 'E:\\My_temp\\Jump\\jump_capture02\\'
+frompath = 'E:\\My_temp\\Jump\\jump_capture03\\'
 fromidx = 0
-aimpath = 'E:\\Projects\\Coding\\wechat-jump\\v2.0_python\\__data\\01\\'
-aimidx = 85
+aimpath = 'E:\\Projects\\Coding\\wechat-jump\\v2.0_python\\__data\\02\\'
+aimidx = 25
 aimsize = 100
 
 global rdat
