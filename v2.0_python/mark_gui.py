@@ -32,7 +32,7 @@ ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("myappid")
 
 # for initializing
 mainpath = 'E:\\My_temp\\Jump\\jump_capture07\\'
-startidx = 0
+startidx = 21
 
 
 class MainWindow(QtWidgets.QMainWindow):
