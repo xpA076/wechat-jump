@@ -9,6 +9,8 @@ __*
 !/v1.0_cpp/*.jpg
 /v2.0_python/*
 /v2.0_python/*.*
+!/v2.0_python/tools/
+/v2.0_python/tools/t*st*
 !*.ico
 !unit.jpg
 !/v2.0_python/*.py
