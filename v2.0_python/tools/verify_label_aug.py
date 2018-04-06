@@ -10,7 +10,7 @@ import struct
 
 
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("myappid")
-mainpath = 'E:\\Projects\\Coding\\wechat-jump\\v2.0_python\\__data\\'
+mainpath = 'E:\\Projects\\Coding\\wechat-jump\\v2.0_python\\__data\\origin\\'
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -23,7 +23,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statusBar().showMessage('Standby...')
 
         self.imglabel = QtWidgets.QLabel(self)
-        self.imglabel.setGeometry(50, 50, 675, 675)
+        self.imglabel.setGeometry(50, 50, 687, 687)
 
         self.label1 = QtWidgets.QLabel('data batch:', self)
         self.label1.setGeometry(670, 120, 180, 50)
@@ -96,13 +96,13 @@ class MainWindow(QtWidgets.QMainWindow):
                       self.text2.text().zfill(4) + '.dat', 'rb')
             data = struct.unpack('4i', rd.read(16))
             if data[0] == 0 and data[1] == 0 and data[2] == 0 and data[3] == 0:
-                cv2.line(roiimg, (0, 0), (675, 675), (0, 0, 255), 1)
-                cv2.line(roiimg, (675, 0), (0, 675), (0, 0, 255), 1)
+                cv2.line(roiimg, (0, 0), (687, 687), (0, 0, 255), 1)
+                cv2.line(roiimg, (687, 0), (0, 687), (0, 0, 255), 1)
             else:
-                cv2.line(roiimg, (0, data[0]), (675, data[0]), (255, 0, 0), 1)
-                cv2.line(roiimg, (0, data[1]), (675, data[1]), (255, 0, 0), 1)
-                cv2.line(roiimg, (data[2], 0), (data[2], 675), (255, 0, 0), 1)
-                cv2.line(roiimg, (data[3], 0), (data[3], 675), (255, 0, 0), 1)
+                cv2.line(roiimg, (0, data[0]), (687, data[0]), (255, 0, 0), 1)
+                cv2.line(roiimg, (0, data[1]), (687, data[1]), (255, 0, 0), 1)
+                cv2.line(roiimg, (data[2], 0), (data[2], 687), (255, 0, 0), 1)
+                cv2.line(roiimg, (data[3], 0), (data[3], 687), (255, 0, 0), 1)
         except FileNotFoundError:
             self.statusBar().showMessage('label data error')
             return

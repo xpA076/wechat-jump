@@ -1,18 +1,54 @@
 import tensorflow as tf
+import cv2
+import numpy as np
+
+import struct
+
+batch = 1024
+
+
+def read_imgdata(idx, frompath):
+    path = 'E:\\Projects\\Coding\\wechat-jump\\v2.0_python\\__data\\' + frompath + '\\' \
+           + str(idx // batch).zfill(2) + '\\' + str(idx % batch).zfill(4)
+    image = cv2.imread(path + '.png')
+    rd = open(path + '.dat', 'rb')
+    data = struct.unpack('4i', rd.read(16))
+    if data[0] == 0 and data[1] == 0 and data[2] == 0 and data[3] == 0:
+        prob = 0
+    else:
+        prob = 1
+    label_prob = np.array([[prob]])
+    label_bbox = np.array([[data[0], data[1], data[2], data[3]]])
+    rd.close()
+    # upper-dimension label
+    return np.array([image]), label_prob, label_bbox
+
+
+def read_batch(idx, bsize, frompath):
+    image = np.zeros((0, 687, 687, 3))
+    label_prob = np.zeros((0, 1))
+    label_bbox = np.zeros((0, 4))
+    for i in range(idx, idx + bsize):
+        img, prob, bbox = read_imgdata(i, frompath)
+        image = np.concatenate((image, img), axis=0)
+        label_prob = np.concatenate((label_prob, prob), axis=0)
+        label_bbox = np.concatenate((label_bbox, bbox), axis=0)
+    return image, label_prob, label_bbox
 
 
 class MyConvNet(object):
 
-    def __init__(self):
+    def __init__(self, batch=64):
         # hyperparameters
         self.t = 0.5
         self.m = 0.5
         # self.batch = 10
 
-        self.input = tf.placeholder('float', [None, 675, 675, 3])
+        self.input = tf.placeholder('float', [None, 687, 687, 3])
         self.label_prob = tf.placeholder('float', [None, 1])
         self.label_bbox = tf.placeholder('float', [None, 4])
         self.keep_prob = tf.placeholder('float')
+        self.learn_rate=tf.placeholder('float')
         # 675 * 675 * 3
         self.kern1 = tf.Variable(tf.truncated_normal([9, 9, 3, 16], stddev=0.01),
             name='k1')
@@ -82,19 +118,24 @@ class MyConvNet(object):
         self.output_bbox = tf.matmul(self.fcon7, self.weig8_bbox) + self.bias8_bbox
 
         # loss function , training methods , saver , etc.
-        loss_prob = tf.nn.sigmoid_cross_entropy_with_logits(labels=self.label_prob,
-            logits=self.z_out)
+        loss_prob = tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(
+            labels=self.label_prob, logits=self.z_out))
         delta = self.output_bbox - self.label_bbox
         dsqr = delta * delta
-        dsqr_xy = tf.reduce_sum(tf.slice(dsqr, [0, 0], [self.label_prob.shape[0], 2]),
-            reduction_indices=0, keepdims=True)
-        dsqr_wh = tf.reduce_sum(tf.slice(dsqr, [0, 2], [self.label_prob.shape[0], 2]),
-            reduction_indices=0, keepdims=True)
-        loss_dist = self.t * dsqr_xy + (1 - self.t) * dsqr_wh
-        self.loss = loss_prob + self.m * tf.where(tf.cast(self.label_prob, 'bool'),
-            loss_dist, 0)  # broadcasting
+        zeros = tf.constant(0.0, shape=[batch, 1])
+        ones = tf.constant(1.0, shape=[batch, 1])
 
-        self.train = tf.train.AdamOptimizer(1e-4).minimize(self.loss)
+        dsqr_xy = tf.reduce_sum(dsqr[0:batch, 0:2],
+            reduction_indices=1, keepdims=True)
+        dsqr_wh = tf.reduce_sum(dsqr[0:batch, 2:4],
+            reduction_indices=1, keepdims=True)
+        self.loss_dist = self.t * dsqr_xy + (1 - self.t) * dsqr_wh
+
+        # loss_dist=tf.reduce_sum(dsqr,axis=1,keep_dims=True)
+        self.loss = loss_prob + self.m * tf.reduce_sum(
+            tf.where(tf.cast(self.label_prob, 'bool'), self.loss_dist, zeros))
+
+        self.train = tf.train.AdamOptimizer(self.learn_rate).minimize(self.loss)
 
         self.saver = tf.train.Saver(
             [self.kern1, self.bias1, self.kern2, self.bias2, self.kern3, self.bias3,
@@ -112,5 +153,6 @@ class MyConvNet(object):
         self.bbox_delta = tf.reduce_sum(
             (self.output_bbox - self.label_bbox) * (self.output_bbox - self.label_bbox),
             reduction_indices=1, keepdims=True)
+        ## correct threshold : 25.0
         self.bbox_correct = tf.reduce_sum(tf.where(tf.cast(self.label_prob, 'bool'),
-            tf.where(tf.less(self.bbox_delta, 25), 1, 0), 0))  # correct threshold : 25
+            tf.where(tf.less(self.bbox_delta, 25.0), ones, zeros), zeros))

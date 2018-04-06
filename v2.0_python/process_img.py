@@ -46,7 +46,8 @@ def getlines(roiimg):
     return x_list
 
 
-def augdata(path, bw=675, bh=675, dpos=True, dh=True, ds=True, dv=True):
+def augdata(path, bw=687, bh=687, dpos=-1, dh=True, ds=True, dv=True):
+    # dpos----  0:no delta ; positive:limited delta ; -1:unlimited delta
     try:
         srcimg = cv2.imread(path + '.png')
         # width and height in absolute coordination
@@ -67,8 +68,8 @@ def augdata(path, bw=675, bh=675, dpos=True, dh=True, ds=True, dv=True):
     lbl_abs[1] = lbl_relative[1] + by0
     lbl_abs[2] = lbl_relative[2] + bx0
     lbl_abs[3] = lbl_relative[3] + bx0
-    bx1, by1 = getroi(srcimg, bw=bw, bh=bh)  # if not dpos, upleft_pos: (bx1, by1)
-    if dpos:
+    bx1, by1 = getroi(srcimg, bw=bw, bh=bh)  # if not dpos, upleft_point: (bx1, by1)
+    if dpos != 0:
         prob = random.random()
         limit = [(lbl_abs[0] * 5 + lbl_abs[1]) // 6, (lbl_abs[0] + lbl_abs[1] * 5) // 6,
                  (lbl_abs[2] * 5 + lbl_abs[3]) // 6, (lbl_abs[2] + lbl_abs[3] * 5) // 6]
@@ -78,8 +79,14 @@ def augdata(path, bw=675, bh=675, dpos=True, dh=True, ds=True, dv=True):
         else:
             t = lbl_abs
         # 下面这段仔细算一下就明白为什么了。绝对坐标系下 bx1, by1 各有若干限制
-        bx1 = random.randint(max(0, t[3] - bw), min(absw - bw, t[2]))
-        by1 = random.randint(max(400, t[1] - bh), min(absh - bh, t[0]))
+        if dpos == -1:
+            val_dpos = 10000
+        else:
+            val_dpos = dpos
+        bx1 = random.randint(max(0, t[3] - bw, bx1 - val_dpos),
+            min(absw - bw, t[2], bx1 + val_dpos))
+        by1 = random.randint(max(400, t[1] - bh, by1 - val_dpos),
+            min(absh - bh, t[0], by1 + val_dpos))
     data = [0] * 4
     data[0] = lbl_abs[0] - by1
     data[1] = lbl_abs[1] - by1
@@ -91,7 +98,7 @@ def augdata(path, bw=675, bh=675, dpos=True, dh=True, ds=True, dv=True):
     roiimg = delta_hsv(roiimg, dh, ds, dv)
 
     # check for error(debuging)
-    if roiimg.shape[0] != 675 or roiimg.shape[1] != 675:
+    if roiimg.shape[0] != 687 or roiimg.shape[1] != 687:
         raise AssertionError
     outsidex = max(0 - data[2], data[3] - bw)
     outsidey = max(0 - data[0], data[1] - bh)
@@ -108,13 +115,14 @@ def delta_hsv(roiimg, dh=True, ds=True, dv=True):
     if dh:
         dHue = random.randint(0, 179)
         h = (h + dHue) % 180
-        print('dHue: ' + str(dHue), end=' ;')
+        print('dHue: ' + str(dHue).zfill(3), end=' ; ')
     # delta saturation
     if ds:
         s = s.astype(np.float)
         max_ = np.max(s)
         dSature = random.randint(0, 255)
-        print('Sature: d=' + str(dSature) + '; max: ' + str(max_),end=' ;')
+        print('Sature: d=' + str(dSature).zfill(3) + '; max: ' + str(max_).zfill(5),
+            end=' ; ')
         s = (s * dSature / max(max_, 10))
         s = s.astype(np.uint8)
     # delta value
